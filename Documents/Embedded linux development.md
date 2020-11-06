@@ -55,7 +55,7 @@ Ubuntu18.04安装完成后，为了方便以后在嵌入式移动设备上的开
 
 3. 设备驱动开发：本质也属于软件程序，与应用程序不同的是，它是介于硬件和操作系统之间，是硬件与操作系统之间的桥梁；而应用程序是介于人与操作系统之间。简单粗暴的理解则是驱动程序就是STM32裸机开发里的那种设备初始化代码(BSP)，但实际上比裸机开发复杂得多，因为要与操作系统交互。下图显示了这样的层次关系：
 
-![image-20201104140726058](/home/lbd/文档/linux学习笔记/嵌入式Linux开发学习笔记.assets/image-20201104140726058.png)
+![image-20201104140726058](/home/lbd/repo/MGY_Gcb_linux/Documents/Embedded linux development.assets/image-20201104140726058.png)
 
 对于不使用操作系统或使用小型实时操作系统（如freeRTOS）的设备来说，与硬件相关的驱动程序与应用程序往往混合在一起，因此常常不会对驱动与应用进行严格的区分，这也导致更换硬件平台时，应用程序移植困难。
 
@@ -75,23 +75,23 @@ Ubuntu18.04安装完成后，为了方便以后在嵌入式移动设备上的开
 
 打开文件夹，显示的目录是主目录，或者换另一种说法：家目录(home)，如下图所示：
 
-![image-20201104150159766](/home/lbd/文档/linux学习笔记/嵌入式Linux开发学习笔记.assets/image-20201104150159766.png)
+![image-20201104150159766](/home/lbd/repo/MGY_Gcb_linux/Documents/Embedded linux development.assets/image-20201104150159766.png)
 
 这个目录是当前登录用户的个人目录，用户对于在这个目录之下的所有文件有着一切权利(读改写与删除)，建议在通常情况下个人相关的内容也是保存在该目录中，因为其它目录大都是系统相关的，使用时容易导致混乱，而且需要相关权限。
 
 上面提到的其它目录，如下图黄色方框：
 
-![image-20201104151326387](/home/lbd/文档/linux学习笔记/嵌入式Linux开发学习笔记.assets/image-20201104151326387.png)
+![image-20201104151326387](/home/lbd/repo/MGY_Gcb_linux/Documents/Embedded linux development.assets/image-20201104151326387.png)
 
 是在其它位置中的，与家目录区分开来，它叫根目录(root)，这是操作系统管理的目录，对所有用户都开放读权限(基本上)，而操作系统对这个目录下所有的文件拥有一切权利，其它用户包括登录用户需要授权才可以进行某些操作，称为操作受限的。
 
-![image-20201104152009844](/home/lbd/文档/linux学习笔记/嵌入式Linux开发学习笔记.assets/image-20201104152009844.png)
+![image-20201104152009844](/home/lbd/repo/MGY_Gcb_linux/Documents/Embedded linux development.assets/image-20201104152009844.png)
 
 根目录下不同的文件有着不同的功能，如bin目录里面存放的是可执行的二进制文件，即应用程序，boot目录存放的是操作系统启动相关的，一旦这个文件被破坏了就会造成操作系统异常，由此可见根目录下文件的重要性，所以这也就是为什么这里的文件对用户只开放了只读功能而不能修改它们，但是用户可以通过根用户授权的方式来进行修改操作，同时这种授权方式也提醒了用户所修改的文件是受保护的文件，应谨慎操作。这种个人与系统文件分割出来的方式大大提升了系统的稳定性与有序性，不容易造成安全隐患与混乱。
 
 与此同时，在根目录下找到home目录，这就是我们所说的家目录，点击进去可以看到里面还有一个文件夹，如图所示：
 
-![image-20201104152814176](/home/lbd/文档/linux学习笔记/嵌入式Linux开发学习笔记.assets/image-20201104152814176.png)
+![image-20201104152814176](/home/lbd/repo/MGY_Gcb_linux/Documents/Embedded linux development.assets/image-20201104152814176.png)
 
 这个文件夹是用户目录，由于在我的系统里面只登录了一个用户，所以只有一个，如果有多个用户，就会有多个文件夹，再点进去就是我们的主目录了。
 
@@ -161,7 +161,7 @@ Linux文件系统，又称为文件层次标准(FHS)，是Linux系统为方便�
 
 在众多用户中，其中的一个用户administrator具有管理其他用户账号和计算机的全部资源的权限。 我们在安装软件的时候，经常会看到“要以管理员身份运行该软件”，又或者是如下图，实际上就是要求我们给予程序一些管理员的权限。
 
-![image-20201104161146798](/home/lbd/文档/linux学习笔记/嵌入式Linux开发学习笔记.assets/image-20201104161146798.png)
+![image-20201104161146798](/home/lbd/repo/MGY_Gcb_linux/Documents/Embedded linux development.assets/image-20201104161146798.png)
 
 Linux操作系统，同样也是多用户操作系统，其中具有管理其他用户和计算机的全部资源的用户，称为root。前面提及过安卓系统，实质上也是基于Linux，安卓手机上常常提到的root权限，也就是获取最高的权限， 就跟电脑获取超级管理员的权限是一样的。
 
@@ -169,7 +169,7 @@ Linux操作系统，同样也是多用户操作系统，其中具有管理其他
 
 在命令行中输入`id`，可以查看当前用户的UID，如下图所示(按住ctrl+alt+t打开命令行)：
 
-![image-20201104161728119](/home/lbd/文档/linux学习笔记/嵌入式Linux开发学习笔记.assets/image-20201104161728119.png)
+![image-20201104161728119](/home/lbd/repo/MGY_Gcb_linux/Documents/Embedded linux development.assets/image-20201104161728119.png)
 
 红框是用户的id，可以看到其值为1000，这是root分配的id号，而黄色方框的gid用于标识当前用户所在的分组（Group），每个用户可以对应多个分组，就比如一个人在学校里面既可以属于学生会组织，也可以属于街舞社、绘画社等等。Linux系统拥有多个分组，每个用户分组就相当社团，用户如果是多个用户组的成员，就可以访问其他分组对应的文件， 前提是该分组的文件允许其他用户访问，这就需要了解另一个概念：文件权限。
 
@@ -177,7 +177,7 @@ Linux操作系统，同样也是多用户操作系统，其中具有管理其他
 
 Linux的文件属性，可以分为读权限、写权限、执行权限。读权限以及写权限，基本上和Windows操作系统是一样的。关于执行权限，是指可以加载到内存中，并由操作系统加载程序执行的文件。在Windows操作系统中， 我们接触最多的应该是后缀为.exe的文件。但是对于Linux来说，它并不是通过后缀名来识别文件类型的， 如果我们想要执行某个可执行文件，则需要为其添加执行权限，即勾选前面的“允许作为程序可执行文件”。
 
-![image-20201104162709833](/home/lbd/文档/linux学习笔记/嵌入式Linux开发学习笔记.assets/image-20201104162709833.png)
+![image-20201104162709833](/home/lbd/repo/MGY_Gcb_linux/Documents/Embedded linux development.assets/image-20201104162709833.png)
 
 除此之外，关于Linux文件权限，还需要分三种情况：文件拥有者（owner），分组成员（groups）以及其他分组成员（other）。 如上图中的文件拥有者我，即当前登录用户对该文件的内容可以进行读写操作， 而对于当前登录用户分组以及其他分组的用户则只能阅读该文件，并不能对该文件进行修改。 如果我们想修改其他分组的文件，我们可以修改该文件分组所拥有的权限。
 
@@ -201,7 +201,7 @@ Linux的文件属性，可以分为读权限、写权限、执行权限。读权
 
 早期的Unix系统与用户就是通过Shell进行交互的，如下图所示，Shell对外接受用户输入的命令， 对内通过“系统调用”传递给内核，内核执行操作后把输出通过Shell呈现给用户，也就是说， Shell就是一个中间人。而Shell的英文原意“壳”，也是为了把它与内核区分开来。
 
-![image-20201104164916337](/home/lbd/文档/linux学习笔记/嵌入式Linux开发学习笔记.assets/image-20201104164916337.png)
+![image-20201104164916337](/home/lbd/repo/MGY_Gcb_linux/Documents/Embedded linux development.assets/image-20201104164916337.png)
 
 那么上面的shell与终端有什么关系呢？
 
@@ -219,11 +219,11 @@ Linux的文件属性，可以分为读权限、写权限、执行权限。读权
 - 快捷键`ctrl + alt + t`即可打开，这种打开方式终端会默认定位到用户主目录；
 - 鼠标右键选择打开(如下图所示)：这种打开方式可以在任意文件夹下都可以使用，而且在不同的文件夹下打开终端后会自动定位到该文件夹的路径，在桌面打开的话会默认定位到用户主目录。
 
-![image-20201104165748468](/home/lbd/文档/linux学习笔记/嵌入式Linux开发学习笔记.assets/image-20201104165748468.png)
+![image-20201104165748468](/home/lbd/repo/MGY_Gcb_linux/Documents/Embedded linux development.assets/image-20201104165748468.png)
 
 **命令提示符：**如图所示
 
-![image-20201104165922217](/home/lbd/文档/linux学习笔记/嵌入式Linux开发学习笔记.assets/image-20201104165922217.png)
+![image-20201104165922217](/home/lbd/repo/MGY_Gcb_linux/Documents/Embedded linux development.assets/image-20201104165922217.png)
 
 打开终端后，我们可以看到终端本身显示了一行字符，而且按回车后会重复出现：
 
@@ -251,7 +251,7 @@ ls -l
 
 输入后的结果如下：
 
-![image-20201104171802228](/home/lbd/文档/linux学习笔记/嵌入式Linux开发学习笔记.assets/image-20201104171802228.png)
+![image-20201104171802228](/home/lbd/repo/MGY_Gcb_linux/Documents/Embedded linux development.assets/image-20201104171802228.png)
 
 
 
@@ -281,7 +281,7 @@ command [-optional] [arguments]
    ls --help
    ```
 
-   ![image-20201104172558665](/home/lbd/文档/linux学习笔记/嵌入式Linux开发学习笔记.assets/image-20201104172558665.png)
+   ![image-20201104172558665](/home/lbd/repo/MGY_Gcb_linux/Documents/Embedded linux development.assets/image-20201104172558665.png)
 
    从上图中圈出来的地方，可以知道参数a可以只列出隐藏的内容。
 
@@ -299,7 +299,7 @@ command [-optional] [arguments]
    man ls
    ```
 
-   ![image-20201104173626557](/home/lbd/文档/linux学习笔记/嵌入式Linux开发学习笔记.assets/image-20201104173626557.png)
+   ![image-20201104173626557](/home/lbd/repo/MGY_Gcb_linux/Documents/Embedded linux development.assets/image-20201104173626557.png)
 
    按键盘方向键的“↑”“↓”键可以实现画面上下滚动，按键盘的“Page Up”和“Page Down”键可以上下翻页，按“q”键退出手册。
 
@@ -309,7 +309,7 @@ command [-optional] [arguments]
    man man 
    ```
    
-   ![image-20201105090220647](/home/lbd/文档/linux学习笔记/嵌入式Linux开发学习笔记.assets/image-20201105090220647.png)
+   ![image-20201105090220647](/home/lbd/repo/MGY_Gcb_linux/Documents/Embedded linux development.assets/image-20201105090220647.png)
    
    从上图可了解到，除了Shell命令外，还可以看到man手册支持共9种类型的内容，如第一章是关于Shell命令， 第二章是系统调用（内核提供的函数）、第三章是库调用（程序库中的函数）等等。
    
