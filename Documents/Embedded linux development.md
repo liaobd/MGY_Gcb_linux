@@ -36,7 +36,7 @@ Ubuntu18.04安装完成后，为了方便以后在嵌入式移动设备上的开
 
 首先从Linux的使用场景说起。
 
-生活中我们接触得最多的就是手机里的安卓或IOS系统，以及Windows，若不是相关的开发人员，可能都不会听说过Linux，但是Linux系统在生活中其实是随处可见的。我们的手机操作系统就是基于Linux内核开发的，但是不开源，随处可见的移动设备，终端机、服务器，甚至导弹上都是基于Linux开发起来的，所以从大方向上划分，Linux系统的应用场景可以分为两类：
+生活中我们接触得最多的就是手机里的安卓或IOS系统，以及Windows，若不是相关的开发人员，可能都不会听说过Linux，但是Linux系统在生活中其实是随处可见的。我们的手机操作系统就是基于Linux内核开发的，但是不开源，随处可见的移动设备，终端机、服务器，甚至导弹上的控制系统都是基于Linux开发起来的，所以从大方向上划分，Linux系统的应用场景可以分为两类：
 
 - 服务器
 - 嵌入式设备(可移动的和不可移动的)
@@ -57,7 +57,7 @@ Ubuntu18.04安装完成后，为了方便以后在嵌入式移动设备上的开
 
 ![image-20201104140726058](/home/lbd/repo/MGY_Gcb_linux/Documents/Embedded linux development.assets/image-20201104140726058.png)
 
-对于不使用操作系统或使用小型实时操作系统（如freeRTOS）的设备来说，与硬件相关的驱动程序与应用程序往往混合在一起，因此常常不会对驱动与应用进行严格的区分，这也导致更换硬件平台时，应用程序移植困难。
+对于不使用操作系统或使用小型实时操作系统（如FreeRTOS）的设备来说，与硬件相关的驱动程序与应用程序往往混合在一起，因此常常不会对驱动与应用进行严格的区分，这也导致更换硬件平台时，应用程序移植困难。
 
 使用了Linux系统的设备，硬件会由操作系统接管。Linux系统的一个重要设计哲学是一切皆文件。包括硬件设备，对于系统来说也是一个文件，所以系统向上层应用程序提供open、write、read、close等统一的文件操作接口，应用程序可以利用这些接口对设备文件进行访问，从而实现对硬件设备的初始化、写入、读取以及关闭等操作。
 
@@ -363,6 +363,8 @@ command [-optional] [arguments]
 
 原因：uboot、Linux内核、自己编写的驱动程序等等，有许多源文件，这些源文件如果自己一个一个手动编译和链接，绝对能累死，这时候我们就需要一种自动化的构建工具，这种工具能根据我们的要求来编译链接然后生成可执行文件，所以make就出现了。事实上，在Windows系统开发项目的时候使用的那些IDE，也叫集成开发环境，可以很方便的帮我们管理项目，自动编译文件，而用户只需要关心代码即可，但是IDE的本质也是像make工具一样在帮我们工作，只不过IDE有着友好的图形界面，自动的帮助我们配置好编译环境。那么为什么到Linux下开发就不用IDE了呢？**因为没有**，其实大多数IDE都是收费的，Linux的宗旨就是开源免费，收费的IDE与免费开源的理念不同导致它们走不到一块去，所以Linux上面就没有这些好用的IDE了。
 
+*注意，以上对Linux没有IDE只是片面的理解，事实上还是有的，只是这些IDE不遵循Linux社区的开源协议，它们发布的程序是以二进制格式文件发文的，Linux软件仓库里有四种发布软件的协议，正如我在本章1.3小节所述那样，现在介绍这些只是说明为什么要用make而已，不要太往这方面纠结！！！*
+
 现在知道了必须要使用make工具的原因了，再补充一点，学习make工具是非常有必要而且很有用的，作为对程序员来说是一个知识层次上的升华，可以深入了解编译器工作的原理。
 
 既然如此，在学习make工具之前，首先深入了解一下一个C语言源文件是怎么被编译成一个二进制的可执行文件的就很有必要了！
@@ -371,7 +373,620 @@ command [-optional] [arguments]
 
 ##### 1.6.1  GCC与Hello World！
 
+**什么是GCC？**
 
+你可能或多或少听过这个名称，在接下来的讲解之前先介绍一下GCC。
+
+GCC(GNU Complier Collection)是一套编译工具链，是指以GCC编译器为核心的一整套工具，用于把代码转化成可执行应用程序，它主要包含以下三部分内容：
+
+- gcc-core：即GCC编译器，用于完成预处理和编译过程，例如把C代码转换成汇编代码。
+- Binutils：除GCC编译器外的一系列小工具包括了链接器ld，汇编器as、目标文件格式查看器readelf等。
+- glibc：包含了主要的 C语言标准函数库，C语言中常常使用的打印函数printf、内存分配函数malloc就在glibc 库中。
+
+一般而言，常常用GCC编译器指代整套GCC编译工具链，下文中除非特别说明，否则GCC指的就是GCC编译工具链。
+
+**GCC编译器**
+
+GCC编译器是由 GNU 开发的编程语言编译器。 GCC最初代表“GNU C Compiler”，当时只支持C语言。 后来又扩展能够支持更多编程语言，包括 C++、Fortran 和 Java 等。 因此，GCC也被重新定义为“GNU Compiler Collection”，成为历史上最优秀的编译器， 其执行效率与一般的编译器相比平均效率要高 20%~30%。
+
+GCC的官网地址为：https://gcc.gnu.org/，在Ubuntu系统下系统默认已经安装好GCC编译器，可以通过如下命令查看Ubuntu系统中GCC编译器的版本及安装路径：
+
+```shell
+gcc -v              #查看gcc版本
+which gcc     #查看gcc的安装路径
+```
+
+![image-20201108133015465](/home/lbd/repo/MGY_Gcb_linux/Documents/Embedded linux development.assets/image-20201108133015465.png)
+
+图中三个方框信息说明如下：
+
+- 红色方框：“Target：x86-64-linux-gnu”表示该GCC的目标平台为x86_64架构（Intel、AMD的CPU）， 表示它编译生成的应用程序只适用于x86架构，不适用于ARM开发板平台；
+
+  *题外话：x86-64架构又称为amd64，原因是这个架构是由AMD公司开发的，一般情况下称为x86-64架构，但是Ubuntu系统里面习惯用amd64，两者是一样的东西，不要迷惑！！！*
+
+- 蓝色方框：“Thread model：posix”表示该GCC遵循posix标准，可以在posix接口上的系统运行；
+
+  *题外话：posix是一个较高层次的概念，它是一套计算机系统的标准，遵循这套标准的计算机具有良好的跨平台特性，暂时知道这些即可，不要太去深究，这是大公司的架构师和系统工程师的工作！！！*
+
+- 黄色方框：“gcc version 7.5.0”表明该GCC的版本为7.5.0，部分程序可能会对编译器版本有要求，比如编译指定版本的uboot、Linux内核的时候可能会对GCC有版本要求。
+
+**Binutils工具集**
+
+Binutils(bin utility)，是GNU二进制工具集，通常跟GCC编译器一起打包安装到系统，它的官方说明网站地址为：https://www.gnu.org/software/binutils/。
+
+在进行程序开发的时候通常不会直接调用这些工具，而是在使用GCC编译指令的时候由GCC编译器间接调用，下面是其中一些常用的工具：
+
+- as：汇编器，把汇编代码转换为机器码(二进制文件，也叫目标文件)；
+- ld：链接器，把汇编器生成的多个目标文件组织成最终的可执行程序文件；
+- readelf：用于查看目标文件或可执行程序文件的信息；
+- nm：用于查看目标文件中出现的符号；
+- objcopy：可用于目标文件格式转换，如.bin 转换成 .elf 、.elf 转换成 .bin等；
+- objdump：可用于查看目标文件的信息，最主要的作用是反汇编；
+- size：可用于查看目标文件不同部分的尺寸和总尺寸，例如代码段大小、数据段大小、使用的静态内存、总大小等。
+
+**glibc库**
+
+glibc库是GNU组织为GNU系统以及Linux系统编写的C语言标准库，因为绝大部分C程序都依赖该函数库，该文件甚至会直接影响到系统的正常运行，例如常用的文件操作函数read、write、open、打印函数printf、动态内存申请函数malloc等。
+
+在Ubuntu系统下，libc.so.6是glibc的库文件，可直接执行该库文件查看版本，在主机上执行如下命令：
+
+![image-20201108134909752](/home/lbd/repo/MGY_Gcb_linux/Documents/Embedded linux development.assets/image-20201108134909752.png)
+
+图中蓝色方框表示本系统中使用的glibc是2.27版本，是由GCC 7.3.0版本的编译器编译出来的。
+
+学习C语言的时候，可能有人特别好奇printf、malloc之类的函数是如何实现的， 但是在Windows下的C库是不开源的，无法查看，而在Linux下， 则可以直接研究glibc的源代码，甚至加入开发社区贡献自己的代码，glibc的官网地址为： https://www.gnu.org/software/libc/ ，可在该网站中下载源代码来学习。
+
+**第一个程序Hello World!**
+
+在目录<u>/home/lbd/repo/MGY_Gcb_linux/linux_ws/1_hello_world</u>下面创建一个`hello_world.c`文件，并且编辑内容如下：
+
+```c
+#include <stdio.h>
+
+int main()
+{
+    printf("Hello world!\r\n");
+    return 0;
+}
+```
+
+这是一个非常通用的C Hello World代码，在Windows下和Linux下并没有什么区别， 甚至跟STM32的裸机代码差异也不大，只是在MCU平台下会多了一些硬件初始化的内容。
+
+**编译并执行**
+
+Ubuntu默认安装GCC编译工具链，写好程序后可以直接进行编译，在程序`hello_world.c`的目录下打开终端，执行以下指令：
+
+```shell
+gcc hello_world.c -o hello             #使用gcc编译器将C语言文件编译成可执行文件hello
+ls                                                                #查看当前目录下的内容
+```
+
+完成之后你会发现在当前目录下多了一个hello的文件，这是一个可执行文件，使用命令`./hello`运行它，‘.’代表当前目录，所以当我们想运行一个可执行程序的时候，输出它的路径名即可执行。
+
+*注意：如发现提示无法执行，这是因为该文件没有赋予执行权限，使用命令`chmod u+x hello`赋予它执行权限，但是这个一般很少出现！！！*
+
+**以上是在x86-64平台下编译运行的程序，现在来演示一下在ARM平台上执行同样的步骤！**
+
+首先检查一下开发板平台上有没有安装gcc，若没有则通过以下命令安装：
+
+`sudo apt install gcc -y`
+
+与前面介绍的Ubuntu中GCC不一样的是，开发板中gcc编译工具链的目标平台是arm架构的，表示它生成的应用程序只能运行于ARM平台的开发板， 而不适合用于X86平台。
+
+运行命令`gcc -v`查看版本信息：
+
+![image-20201108152239777](/home/lbd/repo/MGY_Gcb_linux/Documents/Embedded linux development.assets/image-20201108152239777.png)
+
+从图中红色方框看出，它默认安装的是`arm-linux-gnueabihf`的gcc编译器，即你在什么平台上下载安装的gcc，它会根据不同平台来安装不同版本，而关于这些版本之间的区别以及这些关键名词的说明在下面介绍，现在先不要纠结。
+
+同理，现在在用户目录下创建一个工作目录：`/home/debian/linux_ws/1_hello_ws`，然后使用vim编辑器编辑：`vim hello_world.c`
+
+*如果提示没有vim编辑器，则执行sudo apt install vim -y来安装，我推荐使用vim而不用vi的理由是，vi这个编辑器我也用不好，建议新手不要浪费时间去折腾这个编辑器，它们两者之间的区别我在本章1.4小节已经介绍了！！！*
+
+内容和前面的一样！
+
+与前面一样编译并执行，你会发现运行结果都是一模一样的，当然这么说似乎有点卖关子。以下对GCC编译过程进行讲解：
+
+**GCC编译过程**
+
+刚刚我们使用gcc命令来编译了一个C语言源文件，现对使用的语法进行讲解：
+
+语法的格式如：gcc [选项] 输入的文件名
+
+常用选项如下：
+
+- -o：小写字母“o”，指定生成的可执行文件的名字，不指定的话生成的可执行文件名为a.out；
+- -E：只进行预处理，既不编译，也不汇编；
+- -S：只编译，不汇编；
+- -c：编译并汇编，但不进行链接；
+- -g：生成的可执行文件带调试信息，方便使用gdb进行调试；
+- -Ox：大写字母“O”加数字，设置程序的优化等级，如“-O0” “-O1” “-O2” “-O3”， 数字越大代码的优化等级越高，编译出来的程序一般会越小，但有可能会导致程序不正常运行。
+
+若不了解程序的编译过程，那么GCC的编译选项会让人一头雾水。下面以X86_64平台下Ubuntu的编译过程为例进行初步讲解， ARM平台下Debian的编译过程也是类似的，不再进行分析。
+
+GCC编译选项除了-g和-Ox选项，其它选项实际上都是编译的分步骤，即只进行某些编译过程。
+
+```shell
+#直接编译成可执行文件
+gcc hello_world.c -o hello
+
+#以上命令等价于执行以下全部操作
+#预处理，可理解为把头文件的代码汇总成C代码，把*.c转换得到*.i文件
+gcc –E hello_world.c –o hello_world.i
+
+#编译，可理解为把C代码转换为汇编代码，把*.i转换得到*.s文件
+gcc –S hello_world.i –o hello_world.s
+
+#汇编，可理解为把汇编代码转换为机器码，把*.s转换得到*.o，即目标文件
+gcc –c hello_world.s –o hello_world.o
+
+#链接，把不同文件之间的调用关系链接起来，把一个或多个*.o转换成最终的可执行文件
+gcc hello.o –o hello
+```
+
+GCC 编译工具链在编译一个C源文件时需要经过以下 4 步：
+
+1. 预处理，在预处理过程中，对源代码文件中的文件包含(include)、 预编译语句(如宏定义define等)进行展开，生成.i文件。 可理解为把头文件的代码、宏之类的内容转换成更纯粹的C代码，不过生成的文件以.i为后缀。
+2. 编译，把预处理后的.i文件通过编译成为汇编语言，生成.s文件，即把代码从C语言转换成汇编语言，这是GCC编译器完成的工作。
+3. 汇编，将汇编语言文件经过汇编，生成目标文件.o文件，每一个源文件都对应一个目标文件。即把汇编语言的代码转换成机器码，这是as汇编器完成的工作。
+4. 链接，最后将每个源文件对应的.o文件链接起来，就生成一个可执行程序文件，这是链接器ld完成的工作。
+
+以hello_world.c为例，后面括号代表的是gcc的参数，分步骤编译过程如下图所示。
+
+![image-20201108153352867](/home/lbd/repo/MGY_Gcb_linux/Documents/Embedded linux development.assets/image-20201108153352867.png)
+
+关于编译原理，我推荐学有余力(如果你想技术更上一层楼)的读者去阅读《编译原理》这本书，如下图所示：
+
+![image-20201108191239751](/home/lbd/repo/MGY_Gcb_linux/Documents/Embedded linux development.assets/image-20201108191239751.png)
+
+这本书非常经典，也是我大学期间看了好久的一本书，此外，对于计算机体系结构以及计算机系统原理等等，推荐阅读这本书《深入理解计算机系统》，如下图所示：
+
+![image-20201108191413848](/home/lbd/repo/MGY_Gcb_linux/Documents/Embedded linux development.assets/image-20201108191413848.png)
+
+这也是非常经典的讲解计算机体系结构和操作系统的书籍，至今影响深远，称之为程序员的宝典都不为过！
+
+本小节在这里只是引入门性质的介绍，推荐使用刚刚介绍的那几个命令把hello_world.c这个文件都操作一遍，并尝试阅读得出来的文件有什么不一样，由于篇幅太长，就不展开介绍了。
+
+
+
+##### 1.6.2 ARM-GCC
+
+本小节为了展示不同体系结构之间的差异，将在x86-64下编译的hello_world程序拷贝到开发板上运行，看看会有什么差异，因此需要先做以下环境搭建的工作。
+
+**网络文件系统**
+
+又称为NFS(Network File System)，它是一种轻量级的以服务器-客户端为架构的文件传输系统，只用于局域网，一般用来架设企业的文件传输系统。
+
+开启了NFS服务后，客户端访问服务器共享的文件时如同访问本地存储器（磁盘/SD卡/NAND FLASH等）上的文件一样，对于上层应用来说没有任何差别，在嵌入式开发时，我们常常利用这个特性在主机上共享文件，主要应用场景如下：
+
+- 在NFS服务器上编译应用软件，客户端（开发板）通过NFS访问并运行应用程序进行测试；
+- 把NFS作为根文件系统来启动。
+
+在后面的实验中，我们常常通过NFS给开发板共享开发主机编写的应用程序，本节内容将介绍如何在开发板和开发主机之间共享目录。我们要构建的使用NFS文件系统的实验环境架构如下图所示。
+
+![image-20201108193654910](/home/lbd/repo/MGY_Gcb_linux/Documents/Embedded linux development.assets/image-20201108193654910.png)
+
+在这样的环境中，开发板与开发主机接入到同一个局域网中，然后开发主机 提供NFS服务，开发板通过NFS与开发主机连接共享文件。开发主机生成的目标板应用程序放在NFS的共享文件夹内，开发板访问该文件夹执行应用程序进行测试。
+
+**搭建NFS环境**
+
+
+
+
+
+##### 1.6.3 make与Makefile
+
+前期铺垫了这么多内容，终于到我们的重头戏--make了，这是本章的重点与难点之一，没有接触过make工具的读者，建议反复阅读本小节与动手做实验，思考与做笔记，因为make涉及概念比较多，语法也大多都是晦涩难懂。
+
+**那么什么是make，而说起make时又常常提起的Makefile又是什么呢？**
+
+首先回顾我们之前讲的hello_world程序，编译的时候我们是通过在终端手动输入命令`gcc hello_world.c -o hello`这样的方式得到可执行文件的，这么看也没什么不妥，也很方便。
+
+但是，前面的问题是只有一个C语言文件，当然无伤大雅，此时如果有五个文件要编译呢？对于勤劳的程序员来说，五个也没事，那一百个呢？此时手动编译这么多文件，是不是傻眼了，实话说，谁真的老老实实动手编译了这一百个文件，那他一定是个混子，上班时间都被这样打发掉了！对于我们后期的项目，uboot，Linux内核，以及各种驱动程序和qt程序，文件何止一百，所以make工具就是来解决这种困难的。
+
+**make是一种自动化构建工具，它可以帮助我们找出项目里面修改变更过的文件，并根据依赖关系，找出受修改影响的其他相关文件，然后对这些文件按照规则进行单独的编译，这样一来，就能避免重新编译项目的所有的文件。那么Makefile就是记录了这些规则与编译依赖的文件，我们在其中合理地定义好文件的依赖关系之后，make工具就能精准地进行编译工作。**
+
+它们的关系如下：
+
+![image-20201108201430283](/home/lbd/repo/MGY_Gcb_linux/Documents/Embedded linux development.assets/image-20201108201430283.png)
+
+从上面的介绍，大家可以知道，我们管理一个项目工程，实质上就是管理项目文件间的依赖关系。 所以我们在学习和使用Makefile的时候，一定要牢牢抓住它这种面向依赖的思想， 心里一定要谨记，**Makefile中所有的复杂、晦涩的语法都是更好地为解决依赖问题而存在的**。 理解了它的本质目的之后，我们以后在学习它的过程中就不用死记硬背各种语法了， **只要想想这个本质目的，你会觉得一切都是那么地顺理成章**。
+
+是否真正驾驭Makefile的标志，就在于脑海中是否清晰地知道目标和依赖的关系。当你的大脑能够像make工具一样， 准确无误地解释执行Makefile的时候，就是一个Makefile高手了。我们就是要奔着这个目标去的。
+
+这里再多介绍一下，当工程复杂度再上一个台阶的时候，会觉得手写Makefile也很麻烦， 那个时候可以用CMake、autotools等工具来帮忙生成Makefile。实际上Windows系统下很多IDE工具内部也是使用类似Makefile的方式组织工程文件的， 只不过被封装成图形界面，对用户不可见而已。
+
+**前面大概介绍了make，我们知道了它是根据Makefile来工作的，所以学习的重点就是Makefile**
+
+下图展示了Makefile在底层的编译机制与我们的项目直接怎么挂钩的：
+
+![image-20201108202045754](/home/lbd/repo/MGY_Gcb_linux/Documents/Embedded linux development.assets/image-20201108202045754.png)
+
+接下来我们先整体了解Makefile的相关语法，这里要提前跟大家说清楚一点，Makefile经过多年发展，虽然功能非常强大， 但是也留下了沉重的历史包袱，我们没有办法详细介绍make的每一个详细知识点(也没有必要)，我们总结了80%常用的Makefile知识点，定位在为以后研究Uboot、Linux kernel和其他开源项目打下结实的基础。 虽然这个目标难度还是比较大的，要学习的知识点也不少，不过我们会通过一系列难度逐步迭代的小实验， 来帮助大家无痛学会Makefile。
+
+我一直提倡学习知识之前，要现在脑海中初步建立知识点的整体框架，以此来指导进一步的学习。 接下来我们先整体看一下要学习Makefile的知识点：
+
+1. 基础语法： 描述目标和依赖的特定格式，Makefile的核心。
+2. 变量：记录特定的信息，避免重复输入原始信息。尤其是手动输入原始信息很长时，特别好用。
+3. 分支判断： 灵活控制多个不同的编译过程，方便兼容不同属性。
+4. 头文件依赖： 监控头文件的变化，头文件也是程序的关键内容。
+5. 隐含规则：利用Makefile的一些默认规则，可以减少编写Makefile的工作量。
+6. 自动化变量：利用Makefile的默认的自动化变量，可以减少编写Makefile的工作量。
+7. 模式规则： 灵活使用正则表达式，可以减少编写Makefile的工作量。
+8. 函数：使用Makefile的各种函数，可以更方便地实现Makefile的功能。
+
+了解完Makefile的知识点，从上面的分析可以知道，Makefile的核心在于基础语法，用来描述目标和依赖的关系。 其他语法的目的，是为了减少我们编写Makefile工作量，让我们能够以更加优雅、更加简洁、更好维护的方式来实现Makefile的功能。 这跟我们程序开发是很相似的，不止要实现功能，还要兼顾程序的可读性、拓展性、可维护性等等。
+
+**真正开始**
+
+在开始之前，介绍两本学习资料：
+
+- 《跟我一起写Makefile》：这是中文版的，中国人自己写的！
+- GNU官方的make说明文档：https://www.gnu.org/software/make/manual，当然是面面俱到无所不包，但是是英文文档，而且叙述严谨，需要有一定的基础才能看！
+
+当然，再次建议先学完本章内容建立一个感性的认识之后再去阅读那两本书，否则只能打击学习兴趣（归根到底make语法实在太晦涩难懂了）！！
+
+在路径`/home/lbd/repo/MGY_Gcb_linux/linux_ws/makefile_test/part_1`下创建一个文件`Makefile`，文件名不要乱取！
+
+使用编辑器打开这个问价并输入以下内容：**注意命令前有<tab>**
+
+```makefile
+#创建目标targeta，该目标依赖于targetb与targetc，该目标执行的命令是ls -lh
+targeta:targetb targetc
+	ls -lh
+	
+#创建目标targetb，该目标执行命令pwd
+targetb:
+	pwd
+	
+#创建目标targetc，该目标执行命令使用touch创建text.txt文件
+targetc:
+	touch text.txt
+	
+#创建目标targetd，该目标执行命令删除text.txt文件
+targetd:
+	rm -f text.txt
+```
+
+这个Makefile文件主要是定义了四个目标 操作，先大致了解它们的关系：
+
+- targeta：这是Makefile中的第一个目标代号，也是Makefile文件的最终目标，在符号“:”后 面的内容表示它依赖于targetc和targetb目标，它自身的命令为“ls -lh”，列出当前目录下的内容。
+- targetb：这个目标没有依赖其它内容，它要执行的命令为“touch test.txt”，即创建一个test.txt文件。
+- targetc：这个目标同样也没有依赖其它内容，它要执行的命令为“pwd”，就是简单地显示当前的路径。
+- targetd：这个目标无依赖其它内容，它要执行的命令为“rm -f test.txt”，删除 目录下的test.txt文件。与targetb、c不同的是，没有任何其它目标依赖于targetd，而且 它不是默认目标。
+
+下面使用这个Makefile执行各种make命令，对比不同make命令的输出，可以清楚地了解Makefile的机制：
+
+```shell
+#查看当前目录的内容
+ls
+
+#执行make命令，make会在当前目录下搜索“Makefile”或“makefile”，并执行
+make
+
+#可看到make命令后的输出，它执行了Makefile中编写的命令
+
+#查看执行make命令后的目录内容，多了test.txt文件
+ls
+
+#执行Makefile的targetd目标，并查看，少了test.txt文件
+make targetd
+ls
+
+#执行Makefile的targetb目标，并查看，又生成了test.txt文件
+make targetb
+ls
+
+#执行Makefile的targetc目标
+make targetc
+```
+
+相信此时你在终端下输入以上那些命令之后已经看到各种各样的输出结果了，现在对结果说明如下：
+
+**make命令：**
+
+- 在终端上执行make命令时，make会在当前目录下搜索名为“Makefile”或“makefile”的文件，然后 根据该文件的规则解析执行。如果要指定其它文件作为输入规则，可以通过“-f”参数指定输 入文件，如“make -f 文件名”。
+
+  *直接使用make不指定文件名，make会默认寻找当前目录下名为Makefile或者makefile的文件，或者通过指定文件名的方式使用make*
+
+- 此处make命令读取我们的Makefile文件后，发现targeta是Makefile的第一个目标，它会被当成默认目标执行。
+- 又由于targeta依赖于targetc和targetb目标，所以在执行targeta自身的命令之前，会先去完成targetc和targetb。
+- targetc的命令为pwd，显示了当前的路径。
+- targetb的命令为touch test.txt ，创建了test.txt文件。
+- 最后执行targeta自身的命令ls -lh ，列出当前目录的内容，可看到多了一个test.txt文件。
+
+**make targetd、make targetb、make targetc命令：**
+
+由于targetd不是默认目标，且不被其它任何目标依赖，所以直接make的时 候targetd并没有被执行，想要单独执行Makefile中的某个目标，可以使用”make 目标 名“的语法，例如上图中分别执行了”make targetd“ 、”make targetb“ 和”make targetc“指令，在执行”make targetd”目标时，可看到它的命令rm -f test.txt被执行，test.txt文件被删除。
+
+**从这个过程，可了解到make程序会根据Makefile中描述的目标与依赖关系，执行达成目标需要的shell命令。简单来说，Makefile就是用来指导make程序如何干某些事情的清单。**
+
+**引入Makefile来编译程序**
+
+在路径`/home/lbd/repo/MGY_Gcb_linux/linux_ws/makefile_test/part_1`下创建四个文件：hello_main.c、hello_func.c、hello_func.h、Makefile，分别在前三个文件输入以下内容，Makefile文件留作以后待用：
+
+```c
+/*hello_func.c文件*/
+#include <stdio.h>
+#include "hello_func.h"
+
+void hello_func(void)
+{
+	printf("hello world!\r\n");
+}
+
+```
+
+```c
+/*hello_main.c*/
+#include "hello_func.h"
+
+int main()
+{
+	hello_func();
+	return 0;
+}
+```
+
+```c
+/*hello_func.h*/
+void hello_func(void);
+```
+
+如果我们直接使用GCC进行编译，需要使用如下命令：
+
+```shell
+#注意最后的"-I ."包含名点"."
+gcc -o hello_main hello_main.c hello_func.c -I .
+
+#运行生成的hello_main程序
+./hello_main
+```
+
+相对于基础的hello.c编译命令，此处主要是增加了输入的文件 数量，如“hello_main.c”、“hello_func.c”，另外新增的“-I .”是告诉编 译器头文件路径，让它在编译时可以在“.”（当前目录）寻找头文件。
+
+那么在这里已经能直观地感受到当文件数量越多的时候，以这种方式来编译工作量也就越大，而且也很容易出错！
+
+可以想像到，只要把gcc的编译命令按格式写入到Makefile，就能直接使用make编译，而不需要每次手动直接敲gcc编译命令。
+
+在Makefile文件中输入如下命令;
+
+```makefile
+#默认目标
+#hello_main依赖于hello_main.c和hello_func.c文件
+hello_main:hello_main.c hello_func.c
+	gcc -o hello_main hello_main.c hello_func.c -I .
+
+#clean目标，用来删除编译生成的文件
+clean:
+	rm -f *.o hello_main
+```
+
+该文件定义了默认目标hello_main用于编译程序，clean目标用于删除 编译生成的文件。特别地，其中hello_main目标名与gcc编译生成的文件名”gcc -o hello_main”设置成一致了，也就是说，此处的目标hello_main在Makefile看来，已经是一个目标文件hello_main。
+
+这样的好处是make每次执行的时候，会检查hello_main文件和依赖文件hello_main.c、hello_func.c的修改日期，如果依赖文件的修改日期比hello_main文件的日期新，那么make会执行目标其下的Shell命令更新hello_main文件，否则不会执行。
+
+然后在终端上运行如下命令：
+
+```shell
+#使用make根据Makefile编译程序
+make
+ls
+
+#执行生成的hello_main程序
+./hello_main
+
+#再次make，会提示hello_main文件已是最新
+make
+
+#使用touch命令更新一下hello_func.c的时间
+touch hello_func.c
+
+#再次make，由于hello_func.c比hello_main新，所以会再编译
+make
+ls
+```
+
+相信你已经在你的终端中去实验以及验证了，有了Makefile后，我们实际上只需要执行一下make命令就可以完成 整个编译流程。
+
+下面我们再总结一下Makefile中跟目标相关的语法：
+
+[目标1]：依赖
+
+<tab>[命令1]
+
+<tab>[命令2]
+
+<tab>[...]
+
+<tab>[命令n]
+
+[目标2]：依赖
+
+<tab>[命令1]
+
+<tab>[命令2]
+
+<tab>[...]
+
+<tab>[命令n]
+
+**目标：**指make要做的事情，可以是一个简单的代号，也可以是目标文件，需要顶格书写，前面不能有空格或Tab。一个Makefile可以有多个目标，写在最前面的第一个目标，会被Make程序确立为 “默认目标”，例如前面的targeta、hello_main。
+
+**依赖：**要达成目标需要依赖的某些文件或其它目标。例如前面的targeta依赖 于targetb和targetc，又如在编译的例子中，hello_main依赖于hello_main.c、hello_func.c源文件，若这些文件更新了会重新进行编译。
+
+**命令x**：make达成目标所需要的命令。只有当目标不存在或依赖文件的修改时间比目标文件还要新时，才会执行命令。要特别注意命令的开头要用“Tab”键，不能使用空格代替，有的编辑器会把Tab键自动转换成空格导致出错，若出现这种情况请检查自己的编辑器配置。
+
+**伪目标：**前面我们在Makefile中编写的目标，在make看来其实都是目标文件，例如make在执行的时候由于在目录找不到targeta文件，所以每次make targeta的时候，它都会去执行targeta的命令，期待执行后能得到名为targeta的 同名文件。如果目录下真的有targeta、targetb、targetc的文件，即假如目标文件和依 赖文件都存在且是最新的，那么make targeta就不会被正常执行了，这会引起误会。
+
+为了避免这种情况，Makefile使用“.PHONY”前缀来区分目标代号和目标文件，并且这种目标代号被称为“伪目标”，phony单词翻译过来本身就是假的意思。
+
+也就是说，只要我们不期待生成目标文件，就应该把它定义成伪目标，前面的演示代码修改如下：
+
+```shell
+#默认目标
+#hello_main依赖于hello_main.c和hello_func.c文件
+hello_main: hello_main.c hello_func.c
+   gcc -o hello_main hello_main.c hello_func.c -I .
+#clean伪目标，用来删除编译生成的文件
+.PHONY:clean
+clean:
+   rm -f *.o hello_main
+```
+
+GNU组织发布的软件工程代码的Makefile，常常会有类似以上代码中定义的clean伪目标，用于清除编译的输出文件。常见的还有“all”、“install”、“print”、“tar”等分别用于编译所有内容、安装已编译好的程序、列出被修改的文件及打包成tar文件。虽然并没有固定的要求伪目标必须用这些名字，但可以参考这些习惯来编写自己的Makefile。
+
+如果以上代码中不写“.PHONY:clean”语句，并且在目录下创建一个名为clean的文件，那么当 执行“make clean”时，clean的命令并不会被执行，感兴趣的可以亲自尝试一下。
+
+**默认规则：**make在执行时的流程
+
+![image-20201108224732286](/home/lbd/repo/MGY_Gcb_linux/Documents/Embedded linux development.assets/image-20201108224732286.png)
+
+不过在Makefile的实际应用中，通常会把编译和最终的链接过程分开。
+
+这是因为，我们的hello_main目标文件本质上并不是依赖hello_main.c和hello_func.c文件，而是依 赖于hello_main.o和hello_func.o，把这两个文件链接起来就能得到我们最终想要的hello_main目标文件。另外，由于make有一条默认规则，当找不到xxx. o文件时，会查找目录下的同名xxx.c文件进行编译。根据这样的规则，我们可把Makefile改修改如下：
+
+```makefile
+hello_main:hello_main.o hello_func.o
+	gcc -o hello_main hello_main.o hello_func.o
+	
+#以下是make的默认规则，下面四行可以不写
+#hello_main.o: hello_main.c
+# gcc -c hello_main.c
+#hello_func.o: hello_func.c
+# gcc -c hello_func.c
+```
+
+以上代码把依赖文件由C文件改成了.o文件，gcc编译命令也做了相应的修改，分别是hello_main.o文件和hello_func.o文件的依赖和编译命令，不过由于C编译成同名的.o文件是make的默认规则，所以这部分内容通常不会写上去。
+
+在终端中使用make命令，然后查看输出信息。
+
+从make的输出可看到，它先执行了两条额外的“cc”编译命令，这是由make默认规则执行的，它们把C代码编译生成了同名的.o文件，然后make根据Makefile的命令链接这两个文件得到最终目标文件hello_main。
+
+**使用C自动编译成.o的默认规则有个缺陷，由于没有显式地表示.o依赖于.h头文件，假如我们修改了头文件的内容，那么.o并不会更新，这是不可接受的。并且默认规则使用固定的“cc”进行编译，假如我们想使用ARM-GCC进行交叉编译，那么系统默 认的“cc”会导致编译错误。**
+
+要解决这些问题并且让Makefile变得更加通用，需要引入变量和分支进行处理。
+
+**变量：**在Makefile中的变量，有点像 C语言的宏定义，在引用变量的地方使用变量值进行替换。变量的命名可以包含字符、数字、下划线，区分大小写，定义变量的方式有以下四种：
+
+- = ：延时赋值，该变量只有在调用的时候，才会被赋值；
+- := ：直接赋值，与延时赋值相反，使用直接赋值的话，变量的值定义时就已经确定了；
+- ?= ：若变量的值为空，则进行赋值，通常用于设置默认值；
+- += ：追加赋值，可以往变量后面增加新的内容。
+
+当我们想使用变量的时候，语法为`$(变量名)`，接下来使用变量对`part_2`的makefile进行改造，新创建一个`part_4`，输入内容如下所示：
+
+```makefile
+#定义变量
+CC=gcc
+CFLAGS=-I.
+DEPS = hello_func.h
+
+#目标文件
+hello_main: hello_main.o hello_func.o
+   $(CC) -o hello_main hello_main.o hello_func.o
+
+#*.o文件的生成规则
+%.o: %.c $(DEPS)
+   $(CC) -c -o $@ $< $(CFLAGS)
+
+#伪目标
+.PHONY: clean
+clean:
+   rm -f *.o hello_main
+```
+
+- 定义了CC、CFLAGS、DEPS变量，变量的值就是等号右侧的内容，定义好的变量可通过”$(变量名)”的形式引用，如后面 的”$(CC)”、”$( CFLAGS)”、”$(DEPS)”等价于定义时赋予的变量值”gcc”、"-I."和“hello_func.h”；
+- 使用$(CC)替代了gcc，这样编写的Makefile非常容易更换 不同的编译器，如要进行交叉编译，只要把开头的编译器名字修改掉即可；
+- ”%”是一个通配符，功能类似”*”，如”%.o”表示所 有以”.o”结尾的文件。所以”%.o:%.c”在本例子中等价 于”hello_main.o: hello_main.c”、”hello_func.o: hello_func.c”，即等价于o文件依赖于c文件的默认规则。不过这行代码后面的”$(DEPS)”表示它除了 依赖c文件，还依赖于变量”$(DEPS)”表示的头文件，所以当头文件修改的话，o文件也会被重新编译；
+- 这行代码出现了特殊的变量”$@”，”$<”，可理解为Makefile文件保 留的关键字，是系统保留的自动化变量，”$@”代表了目标文件，”$<”代表了第一个依赖 文件。即”$@”表示”%.o”，”$<”表示”%.c”；
+
+**改造链接规则：**与*.o文件的默认规则类似，我们也可以使用变量来修改生成最终目标 文件的链接规则，具体参考如下代码：
+
+```makefile
+#定义变量
+TARGET=hello_main
+CC=gcc
+CFLAGS=-I.
+DEPS=hello_func.h
+OBJS=hello_main.o hello_func.o
+
+#默认目标
+$(TARGET):$(OBJS)
+	$(CC) -o $@ $^ $(CFLAGS)
+
+#*.o文件的生成规则
+%.o:%.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+#伪目标
+.PHONY:clean
+clean:
+	rm -f *.o hello_main
+```
+
+以上代码中的Makefile把编译及链接的过程都通过变量表示出来了，非常通用，使用这样的Makefile可以针对不同的工程直接修改变量的内容就可以使用。
+
+其它的自动化变量：
+
+| 符号 | 含义                                           |
+| ---- | ---------------------------------------------- |
+| $@   | 匹配目标文件                                   |
+| $%   | 与$@类似，但$%仅匹配“库”类型的目标文件         |
+| $<   | 依赖中的第一个目标文件                         |
+| $^   | 所有的依赖目标，如果依赖中有重复的，只保留一份 |
+| $+   | 所有的依赖目标，即使依赖中有重复的也原样保留   |
+| $?   | 所有比目标要新的依赖目标                       |
+
+**使用分支**
+
+为方便直接切换GCC编译器，我们还可以使用条件分支增加切换编译器 的功能。在Makefile中的条件分支语法如下：
+
+```makefile
+ifeq(arg1, arg2)
+分支1
+else
+分支2
+endif
+```
+
+分支会比较括号内的参数“arg1”和“arg2”的值是否相 同，如果相同，则为真，执行分支1的内容，否则的话，执行分支2 的内容，参 数arg1和arg2可以是变量或者是常量。
+
+**使用函数：**在更复杂的工程中，头文件、源文件可能会放在二级目录，编译生成的.o或可执行文件也放到专门的编译输出目录方便整理。示例中.h头文件放在includes目录下，.c文件放在sources目录下，不同平台的编译输出分别存放在build_x86和build_arm中。
+
+在Makefile中调用函数的方法跟变量的使用 类似，以“$()”或“${}”符号包含函数名和参数，具体语法如下：
+
+```makefile
+$(函数名 参数)
+#或者使用花括号
+${函数名 参数}
+```
+
+下面以常用的notdir、patsubst、wildcard函数为例 进行讲解，并且示例中都是我们后面Makefile中使用到的内容。
+
+**notdir函数**：notdir函数用于去除文件路径中的目录部分。它的格式如下：
+
+```makefile
+$(notdir 文件名)
+```
+
+例如输入参数“./sources/hello_func.c”，函数执行后 的输出为“hell_func.c”，也就是说它会把输入中的“./sources/”路径部分去掉，保留 文件名。
+
+**wildcard函数：**用于获取文件列表，并使用空格分隔开。它的格式如下：
+
+```makefile
+$(wildcard 匹配规则)
+```
+
+例如函数调用“$(wildcard .c)”，函数执行后会把当前目录的所 有c文件列出。
+
+**patsubst函数：**patsubst函数功能为模式字符串替换。它的格式如下
+
+```makefile
+$(patsubst 匹配规则, 替换规则, 输入的字符串)
+```
+
+当输入的字符串符合匹配规则，那么使用替换规则来替换字符串，当匹配规则中有“%”号时，替换规 则也可以例程“%”号来提取“%”匹配的内容加入到最后替换的字符串中。
 
 
 
